@@ -57,7 +57,7 @@ app.get("/cookies", async (req, res) => {
   await frame.type("#password_text_field", PASSWORD);
   await frame.click("#sign-in");
   await frame.waitForTimeout(5000);
-  await frame.click(`text=•••${PHONE_NUMBER_LAST_DIGITS}`);
+  await frame.click(`text=••${PHONE_NUMBER_LAST_DIGITS}`);
 
   // Wait maximum 30 seconds in loop until the verification code is not null
   let waitTime = 0;
