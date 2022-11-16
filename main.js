@@ -69,7 +69,14 @@ const PODCAST_URL = process.env.PODCAST_URL;
   // https://github.com/georgespencer/derogan/blob/bc25a2651006b6356aa19b258076029968f277e0/apple_music.py#L54
   // frame.click("//button[contains(@id,'trust-browser')]").click();
 
+  await page.waitForTimeout(5000);
+  await page.waitForLoadState("networkidle");
+
   await page.goto(PODCAST_URL);
+  await page.waitForSelector("body");
+
+  await page.waitForTimeout(5000);
+  await page.waitForLoadState("networkidle");
 
   const cookies = await page.context().cookies();
   console.log(cookies);
