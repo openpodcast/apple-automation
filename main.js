@@ -20,6 +20,7 @@ const PODCAST_URL = process.env.PODCAST_URL;
   const page = await browser.newPage();
   await page.goto(APPLE_LOGIN_URL);
   await page.waitForTimeout(5000);
+  await page.waitForLoadState("networkidle");
 
   const frame = page.frame({
     name: "aid-auth-widget",
