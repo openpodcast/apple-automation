@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "playright": "^0.0.22",
-    "prompt-sync": "^4.2.0"
+    "express": "^4.18.2",
+    "playright": "^0.0.22"
   }
 }
