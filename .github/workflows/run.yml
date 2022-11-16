@@ -1,0 +1,33 @@
+name: Fetch Apple Cookies
+on:
+  repository_dispatch:
+  workflow_dispatch:
+  schedule:
+    - cron: "00 11 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16.x
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run
+        run: node main.js
+
+      # - name: Commit data
+      #   uses: stefanzweifel/git-auto-commit-action@v4.1.2
+      #   with:
+      #     branch: ${{ github.head_ref }}
+      #     commit_message: Fetch Spotify data
+      #     commit_user_name: Open Podcast Bot
+      #     commit_user_email: bot@openpodcast.dev
+      #     commit_author: Open Podcast Bot <bot@openpodcast.dev>
