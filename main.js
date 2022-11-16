@@ -1,6 +1,6 @@
 const { chromium, firefox } = require("playwright");
-const prompt = require("prompt-sync")();
 const fs = require("fs");
+const express = require("express");
 
 const APPLE_LOGIN_URL = "https://appleid.apple.com/sign-in";
 
@@ -9,6 +9,23 @@ const ACCOUNT_NAME = process.env.ACCOUNT_NAME;
 const PASSWORD = process.env.PASSWORD;
 const PHONE_NUMBER_LAST_DIGITS = process.env.PHONE_NUMBER_LAST_DIGITS;
 const PODCAST_URL = process.env.PODCAST_URL;
+const PORT = process.env.PORT || 3000;
+
+// A function that starts a web server and returns the verification code from the user
+async function getCode() {
+  return new Promise((resolve) => {
+    const app = express();
+    app.listen(PORT, () => {
+      console.log(`Listening for verification code on port ${PORT}`);
+    });
+
+    app.get("/code", (req, res) => {
+      const code = req.query.code;
+      res.send("Thanks! You can close this window now.");
+      resolve(code);
+    });
+  });
+}
 
 (async () => {
   const browser = await firefox.launch({
@@ -35,8 +52,12 @@ const PODCAST_URL = process.env.PODCAST_URL;
   await frame.waitForTimeout(5000);
   await frame.click(`text=•••${PHONE_NUMBER_LAST_DIGITS}`);
 
-  const code = prompt("Enter 6-digit verification code: ");
-  console.log(`Verification code is ${code}`);
+  // const code = prompt("Enter 6-digit verification code: ");
+  // console.log(`Verification code is ${code}`);
+
+  // Start webserver with a simple route to get the verification code
+  // Wait until `/code` route is called
+  const code = await getCode();
 
   // click on the first input field with id char0
   await frame.click("#char0");
