@@ -20,11 +20,7 @@ const PODCAST_URL = process.env.PODCAST_URL;
   const page = await browser.newPage();
   await page.goto(APPLE_LOGIN_URL);
 
-  // wait 10 seconds for user to login
-  // await page.waitForTimeout(10000);
-  // wait for network to be idle
   await page.waitForLoadState("networkidle");
-
   await page.waitForSelector("iframe[name='aid-auth-widget']");
 
   const frame = await page.frame({
