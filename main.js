@@ -12,7 +12,7 @@ const PODCAST_URL = process.env.PODCAST_URL;
 
 (async () => {
   const browser = await firefox.launch({
-    headless: false,
+    headless: true,
     slowMo: 100,
     devtools: true,
   });
