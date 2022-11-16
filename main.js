@@ -19,10 +19,26 @@ async function getCode() {
       console.log(`Listening for verification code on port ${PORT}`);
     });
 
-    app.get("/code", (req, res) => {
-      const code = req.query.code;
-      res.send("Thanks! You can close this window now.");
-      resolve(code);
+    // Handle post request with JSON payload. Extract `body` field from JSON payload
+    app.post("/code", express.json(), (req, res) => {
+      // The text body of the message. Up to 1600 characters long.
+      const code = req.body.Body;
+      const codeRegex = /.*#([0-9]{6}) .*/;
+      const match = codeRegex.exec(code);
+      if (match) {
+        const code = match[1];
+        console.log(`Received verification code: ${code}`);
+
+        // Send a response to the user
+        res.send("Thanks! I got the code.");
+        // Close the server
+        app.close();
+        // Resolve the promise with the code
+        resolve(code);
+      } else {
+        // Send a response to the user
+        res.send("Sorry, I didn't get the code.");
+      }
     });
   });
 }
