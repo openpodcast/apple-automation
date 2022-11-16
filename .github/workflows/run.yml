@@ -22,6 +22,11 @@ jobs:
 
       - name: Run
         run: node main.js
+        env:
+          ACCOUNT_NAME: ${{ secrets.ACCOUNT_NAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          PHONE_NUMBER_LAST_DIGITS: ${{ secrets.PHONE_NUMBER_LAST_DIGITS }}
+          PODCAST_URL: https://podcastsconnect.apple.com/analytics/topp-the-open-podcast-podcast/1642486726/overview
 
       # - name: Commit data
       #   uses: stefanzweifel/git-auto-commit-action@v4.1.2
