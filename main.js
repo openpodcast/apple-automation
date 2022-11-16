@@ -25,6 +25,9 @@ const PODCAST_URL = process.env.PODCAST_URL;
     name: "aid-auth-widget",
   });
 
+  // click checkbox with id `#remember-me`
+  await frame.click("#remember-me");
+
   await frame.type("#account_name_text_field", ACCOUNT_NAME);
   await frame.click("#sign-in");
   await frame.click("#password_text_field");
