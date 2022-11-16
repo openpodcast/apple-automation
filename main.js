@@ -27,18 +27,9 @@ const PODCAST_URL = process.env.PODCAST_URL;
 
   await page.waitForSelector("iframe[name='aid-auth-widget']");
 
-  console.log("Iframe found");
-
-  // print iframe content
-  const iframe = await page.$("iframe[name='aid-auth-widget']");
-  const iframeContent = await iframe.contentFrame();
-  console.log(await iframeContent.content());
-
   const frame = await page.frame({
     name: "aid-auth-widget",
   });
-
-  console.log(frame);
 
   await frame.type("#account_name_text_field", ACCOUNT_NAME);
   await frame.click("#sign-in");
