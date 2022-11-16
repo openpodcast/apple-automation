@@ -5,6 +5,5 @@ COPY . /app
 
 WORKDIR /app
 RUN npm install
-CMD node main.js
 
-
+ENTRYPOINT ["node", "main.js"]
