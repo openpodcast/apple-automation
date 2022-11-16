@@ -116,12 +116,10 @@ async function getCode() {
 
   const cookies = await page.context().cookies();
   console.log(cookies);
-  const myacinfo = cookies.find((cookie) => cookie.name === "myacinfo");
-  const itctx = cookies.find((cookie) => cookie.name === "itctx");
-
-  fs.writeFileSync("cookie.json", JSON.stringify({ myacinfo, itctx }));
-
-  await page.waitForTimeout(200000);
+  // const myacinfo = cookies.find((cookie) => cookie.name === "myacinfo");
+  // const itctx = cookies.find((cookie) => cookie.name === "itctx");
+  // fs.writeFileSync("cookie.json", JSON.stringify({ myacinfo, itctx }));
+  await page.waitForTimeout(5000);
 
   await browser.close();
 })();
