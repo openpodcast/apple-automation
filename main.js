@@ -12,22 +12,33 @@ const PODCAST_URL = process.env.PODCAST_URL;
 
 (async () => {
   const browser = await firefox.launch({
-    headless: true,
+    headless: false,
     slowMo: 100,
     devtools: true,
   });
 
   const page = await browser.newPage();
   await page.goto(APPLE_LOGIN_URL);
-  await page.waitForTimeout(5000);
+
+  // wait 10 seconds for user to login
+  // await page.waitForTimeout(10000);
+  // wait for network to be idle
   await page.waitForLoadState("networkidle");
 
-  const frame = page.frame({
+  await page.waitForSelector("iframe[name='aid-auth-widget']");
+
+  console.log("Iframe found");
+
+  // print iframe content
+  const iframe = await page.$("iframe[name='aid-auth-widget']");
+  const iframeContent = await iframe.contentFrame();
+  console.log(await iframeContent.content());
+
+  const frame = await page.frame({
     name: "aid-auth-widget",
   });
 
-  // click checkbox with id `#remember-me`
-  await frame.click("#remember-me");
+  console.log(frame);
 
   await frame.type("#account_name_text_field", ACCOUNT_NAME);
   await frame.click("#sign-in");
