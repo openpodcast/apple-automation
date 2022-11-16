@@ -19,14 +19,13 @@ const PODCAST_URL = process.env.PODCAST_URL;
 
   const page = await browser.newPage();
   await page.goto(APPLE_LOGIN_URL);
-  await page.waitForTimeout(5000);
 
-  const frame = page.frame({
+  await page.waitForLoadState("networkidle");
+  await page.waitForSelector("iframe[name='aid-auth-widget']");
+
+  const frame = await page.frame({
     name: "aid-auth-widget",
   });
-
-  // click checkbox with id `#remember-me`
-  await frame.click("#remember-me");
 
   await frame.type("#account_name_text_field", ACCOUNT_NAME);
   await frame.click("#sign-in");
