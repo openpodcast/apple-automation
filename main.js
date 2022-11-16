@@ -21,7 +21,7 @@ const PODCAST_URL = process.env.PODCAST_URL;
   await page.goto(APPLE_LOGIN_URL);
   await page.waitForTimeout(5000);
 
-  const frame = await page.frame({
+  const frame = page.frame({
     name: "aid-auth-widget",
   });
 
@@ -33,15 +33,38 @@ const PODCAST_URL = process.env.PODCAST_URL;
   await frame.waitForTimeout(5000);
   await frame.click(`text=•••${PHONE_NUMBER_LAST_DIGITS}`);
 
-  const code = prompt("Enter verification code: ");
+  const code = prompt("Enter 6-digit verification code: ");
   console.log(`Verification code is ${code}`);
 
   // click on the first input field with id char0
   await frame.click("#char0");
-  // type the code
-  await frame.type("#char0", code);
+  await frame.type("#char0", code[0]);
+  await frame.waitForTimeout(Math.random() * 1000 + 500);
+
+  await frame.click("#char1");
+  await frame.type("#char1", code[1]);
+  await frame.waitForTimeout(Math.random() * 1000 + 500);
+
+  await frame.click("#char2");
+  await frame.type("#char2", code[2]);
+  await frame.waitForTimeout(Math.random() * 1000 + 500);
+
+  await frame.click("#char3");
+  await frame.type("#char3", code[3]);
+  await frame.waitForTimeout(Math.random() * 1000 + 500);
+
+  await frame.click("#char4");
+  await frame.type("#char4", code[4]);
+  await frame.waitForTimeout(Math.random() * 1000 + 500);
+
+  await frame.click("#char5");
+  await frame.type("#char5", code[5]);
 
   await frame.waitForSelector("body");
+
+  // TODO: Accept browser if needed
+  // https://github.com/georgespencer/derogan/blob/bc25a2651006b6356aa19b258076029968f277e0/apple_music.py#L54
+  // frame.click("//button[contains(@id,'trust-browser')]").click();
 
   await page.goto(PODCAST_URL);
 
