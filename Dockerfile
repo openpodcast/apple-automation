@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/playwright:v1.27.1-focal
 
 # Install nodemon
-RUN npm install -g nodemon
+RUN npm install -g forever
 
 # create root application folder
 WORKDIR /app
@@ -11,4 +11,4 @@ COPY . /app
 
 RUN npm install
 
-ENTRYPOINT ["nodemon", "main.js"]
+ENTRYPOINT ["forever", "main.js"]
