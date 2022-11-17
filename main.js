@@ -48,7 +48,7 @@ app.get("/code", express.json(), (req, res) => {
 app.get("/cookies", async (req, res) => {
   logger.info("Received request for cookies");
   const browser = await firefox.launch({
-    headless: true,
+    headless: false,
     slowMo: 100,
     devtools: true,
   });
@@ -65,6 +65,7 @@ app.get("/cookies", async (req, res) => {
 
   //lets try to reload
   if (!frame) {
+    await page.waitForTimeout(15000);
     logger.debug("Couldn't load iframe, so let's try to reload")
     await page.reload();
     await page.waitForLoadState("networkidle");

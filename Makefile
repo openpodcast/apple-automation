@@ -1,6 +1,6 @@
 .PHONY: run dev
 run dev:
-	node main.js
+	./node_modules/.bin/nodemon main.js
 
 .PHONY: install
 install:
