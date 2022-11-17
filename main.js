@@ -141,7 +141,7 @@ app.get("/cookies", async (req, res) => {
     logger.error('playwright error')
     logger.error(e)
     await browser.close();
-    res.status(500).send("error while doing auth magic");
+    res.status(503).send("error while doing auth magic with apple. try again later.");
     return;
   }
 
