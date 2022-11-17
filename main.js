@@ -112,27 +112,7 @@ app.get("/cookies", async (req, res) => {
 
     // click on the first input field with id char0
     await frame.click("#char0");
-    await frame.type("#char0", code[0]);
-    await frame.waitForTimeout(Math.random() * 1000 + 500);
-
-    await frame.click("#char1");
-    await frame.type("#char1", code[1]);
-    await frame.waitForTimeout(Math.random() * 1000 + 500);
-
-    await frame.click("#char2");
-    await frame.type("#char2", code[2]);
-    await frame.waitForTimeout(Math.random() * 1000 + 500);
-
-    await frame.click("#char3");
-    await frame.type("#char3", code[3]);
-    await frame.waitForTimeout(Math.random() * 1000 + 500);
-
-    await frame.click("#char4");
-    await frame.type("#char4", code[4]);
-    await frame.waitForTimeout(Math.random() * 1000 + 500);
-
-    await frame.click("#char5");
-    await frame.type("#char5", code[5]);
+    await frame.type("#char0", code, { delay: 300 });
 
     await frame.waitForSelector("body");
 
