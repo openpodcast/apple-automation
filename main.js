@@ -2,6 +2,7 @@ const { chromium, firefox } = require("playwright");
 const fs = require("fs");
 const express = require("express");
 const dotenv = require('dotenv');
+const winston = require('winston');
 
 const APPLE_LOGIN_URL = "https://appleid.apple.com/sign-in";
 
@@ -13,6 +14,14 @@ const PASSWORD = process.env.PASSWORD;
 const PHONE_NUMBER_LAST_DIGITS = process.env.PHONE_NUMBER_LAST_DIGITS;
 const PODCAST_URL = process.env.PODCAST_URL;
 const PORT = process.env.PORT || 3000;
+const LOGLEVEL = process.env.LOGLEVEL || "info";
+
+const logger = winston.createLogger({
+  level: LOGLEVEL,
+  format: winston.format.json(),
+  transports: [new winston.transports.Console(),],
+});
+
 
 let verificationCode = null;
 
@@ -22,13 +31,13 @@ const app = express();
 app.get("/code", express.json(), (req, res) => {
   // Get Body as get parameter
   const text = req.query.Body;
-  console.log(text);
+  logger.info(`sms code received. text: ${text}`);
   const codeRegex = /.*#([0-9]{6}) .*/m;
 
   const match = codeRegex.exec(text);
   if (match) {
     const code = match[1];
-    console.log(`Received verification code: ${code}`);
+    logger.info(`Received verification code: ${code}`);
 
     // Resolve the promise with the code
     verificationCode = code;
@@ -37,7 +46,7 @@ app.get("/code", express.json(), (req, res) => {
 });
 
 app.get("/cookies", async (req, res) => {
-  console.log("Received request for cookies");
+  logger.info("Received request for cookies");
   const browser = await firefox.launch({
     headless: true,
     slowMo: 100,
@@ -56,6 +65,7 @@ app.get("/cookies", async (req, res) => {
 
   //lets try to reload
   if (!frame) {
+    logger.debug("Couldn't load iframe, so let's try to reload")
     await page.reload();
     await page.waitForLoadState("networkidle");
     await page.waitForSelector("iframe[name='aid-auth-widget']");
@@ -64,6 +74,7 @@ app.get("/cookies", async (req, res) => {
     });
     //if we still can't find it, give up
     if (!frame) {
+      logger.error("Couldn't load iframe the second time, giving up")
       await browser.close();
       res.status(400).send("Auth iframe couldn't be loaded");
       return;
@@ -76,8 +87,11 @@ app.get("/cookies", async (req, res) => {
   await frame.click("#password_text_field");
   await frame.type("#password_text_field", PASSWORD);
   await frame.click("#sign-in");
+  //TODO: replace by waiting for an element instead of waiting 5 secs
   await frame.waitForTimeout(5000);
   await frame.click(`text=••${PHONE_NUMBER_LAST_DIGITS}`);
+
+  logger.debug("Clicked on the phone number and waiting...")
 
   // Wait maximum 30 seconds in loop until the verification code is not null
   let waitTime = 0;
@@ -90,11 +104,13 @@ app.get("/cookies", async (req, res) => {
   // Reset verification code for next request
   verificationCode = null;
   if (code === null) {
-    console.log("Verification code not received");
+    logger.error("Verification code not received, waited 30sec");
     await browser.close();
     res.status(400).send("Verification code not received");
     return;
   }
+
+  logger.debug("Code received, entering the code into form now")
 
   // click on the first input field with id char0
   await frame.click("#char0");
@@ -128,6 +144,8 @@ app.get("/cookies", async (req, res) => {
 
   await page.waitForTimeout(5000);
   await page.waitForLoadState("networkidle");
+
+  logger.debug("Looks good, we should be logged in, so goto podcast dashboard to generate all missing cookies")
 
   await page.goto(PODCAST_URL);
   await page.waitForSelector("body");
