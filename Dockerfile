@@ -1,9 +1,14 @@
 FROM mcr.microsoft.com/playwright:v1.27.1-focal
 
+# Install nodemon
+RUN npm install -g nodemon
+
+# create root application folder
+WORKDIR /app
+
 # COPY code
 COPY . /app
 
-WORKDIR /app
 RUN npm install
 
-ENTRYPOINT ["node", "main.js"]
+ENTRYPOINT ["nodemon", "main.js"]
