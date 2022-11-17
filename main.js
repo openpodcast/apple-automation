@@ -56,31 +56,21 @@ app.get("/cookies", async (req, res) => {
   const page = await browser.newPage();
   await page.goto(APPLE_LOGIN_URL);
 
-  await page.waitForLoadState("networkidle");
-  await page.waitForSelector("iframe[name='aid-auth-widget']");
+  //await page.waitForLoadState("networkidle");
+  logger.debug("Waiting for iframe...")
+  await page.waitForSelector("#aid-auth-widget-iFrame");
 
-  let frame = await page.frame({
-    name: "aid-auth-widget",
-  });
-
-  //lets try to reload
-  if (!frame) {
-    await page.waitForTimeout(15000);
-    logger.debug("Couldn't load iframe, so let's try to reload")
-    await page.reload();
-    await page.waitForLoadState("networkidle");
-    await page.waitForSelector("iframe[name='aid-auth-widget']");
-    frame = await page.frame({
-      name: "aid-auth-widget",
-    });
-    //if we still can't find it, give up
-    if (!frame) {
-      logger.error("Couldn't load iframe the second time, giving up")
-      await browser.close();
-      res.status(400).send("Auth iframe couldn't be loaded");
-      return;
-    }
+  //contains always the main frame, so we need at least a second one (the iframe)
+  const frames = await page.frames()
+  if (frames.length < 2) {
+    logger.error("Couldn't find iframe")
+    await browser.close();
+    res.status(400).send("Auth iframe couldn't be loaded");
+    return;
   }
+  // let's assume the first iframe is always the main frame,
+  // so the second one should be our iframe we are looking for
+  const frame = await page.frames()[1]
 
   await frame.waitForSelector("#account_name_text_field");
   await frame.type("#account_name_text_field", ACCOUNT_NAME);
@@ -88,11 +78,13 @@ app.get("/cookies", async (req, res) => {
   await frame.click("#password_text_field");
   await frame.type("#password_text_field", PASSWORD);
   await frame.click("#sign-in");
+  logger.debug("sign in clicked")
+
   //TODO: replace by waiting for an element instead of waiting 5 secs
   await frame.waitForTimeout(5000);
   await frame.click(`text=••${PHONE_NUMBER_LAST_DIGITS}`);
 
-  logger.debug("Clicked on the phone number and waiting...")
+  logger.debug("Clicked on the phone number and waiting now...")
 
   // Wait maximum 30 seconds in loop until the verification code is not null
   let waitTime = 0;
