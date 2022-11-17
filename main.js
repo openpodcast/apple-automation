@@ -136,7 +136,11 @@ app.get("/cookies", async (req, res) => {
     await page.waitForLoadState("networkidle");
 
     const cookies = await page.context().cookies();
-    console.log(cookies);
+
+    await browser.close();
+
+    res.json(cookies);
+
     // const myacinfo = cookies.find((cookie) => cookie.name === "myacinfo");
     // const itctx = cookies.find((cookie) => cookie.name === "itctx");
     // fs.writeFileSync("cookie.json", JSON.stringify({ myacinfo, itctx }));
@@ -150,9 +154,6 @@ app.get("/cookies", async (req, res) => {
     return;
   }
 
-  await browser.close();
-
-  res.json(cookies);
 });
 
 app.listen(PORT, () => {
