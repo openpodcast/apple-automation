@@ -48,14 +48,13 @@ app.get("/code", express.json(), (req, res) => {
 app.get("/cookies", async (req, res) => {
   logger.info("Received request for cookies");
 
+  const browser = await chromium.launch({
+    headless: true,
+    slowMo: 100,
+    devtools: false,
+  });
 
   try {
-
-    const browser = await chromium.launch({
-      headless: true,
-      slowMo: 100,
-      devtools: false,
-    });
 
     const page = await browser.newPage();
 
@@ -139,10 +138,10 @@ app.get("/cookies", async (req, res) => {
     // await page.waitForTimeout(5000);
 
   } catch (e) {
-    logger.error('playwright crashed')
+    logger.error('playwright error')
     logger.error(e)
     await browser.close();
-    res.status(500).send("headless exploded, wait and try again");
+    res.status(500).send("error while doing auth magic");
     return;
   }
 
