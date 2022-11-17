@@ -15,6 +15,7 @@ const PHONE_NUMBER_LAST_DIGITS = process.env.PHONE_NUMBER_LAST_DIGITS;
 const PODCAST_URL = process.env.PODCAST_URL;
 const PORT = process.env.PORT || 3000;
 const LOGLEVEL = process.env.LOGLEVEL || "info";
+const HEADLESS = process.env.HEADLESS || "TRUE"
 
 const logger = winston.createLogger({
   level: LOGLEVEL,
@@ -49,9 +50,8 @@ app.get("/cookies", async (req, res) => {
   logger.info("Received request for cookies");
 
   const browser = await chromium.launch({
-    headless: true,
-    slowMo: 100,
-    devtools: false,
+    headless: HEADLESS === "TRUE",
+    slowMo: 100
   });
 
   try {
@@ -103,7 +103,7 @@ app.get("/cookies", async (req, res) => {
     if (code === null) {
       logger.error("Verification code not received, waited 30sec");
       await browser.close();
-      res.status(400).send("Verification code not received");
+      res.status(503).send("Verification code not received");
       return;
     }
 
