@@ -49,7 +49,9 @@ app.get("/code", express.json(), (req, res) => {
 app.get("/cookies", async (req, res) => {
   logger.info("Received request for cookies");
 
-  const browser = await chromium.launch({
+  // when using chromium in headless mode (and only in headless)
+  // the iframe is not loaded, therefor we are using firefox for now
+  const browser = await firefox.launch({
     headless: HEADLESS === "TRUE",
     slowMo: 100
   });
@@ -92,7 +94,7 @@ app.get("/cookies", async (req, res) => {
 
     // Wait maximum 30 seconds in loop until the verification code is not null
     let waitTime = 0;
-    while (verificationCode === null && waitTime < 30) {
+    while (verificationCode === null && waitTime < 60) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       waitTime++;
     }
