@@ -47,111 +47,124 @@ app.get("/code", express.json(), (req, res) => {
 
 app.get("/cookies", async (req, res) => {
   logger.info("Received request for cookies");
-  const browser = await chromium.launch({
-    headless: true,
-    slowMo: 100,
-    devtools: false,
-  });
 
-  const page = await browser.newPage();
-  await page.goto(APPLE_LOGIN_URL);
 
-  //await page.waitForLoadState("networkidle");
-  logger.debug("Waiting for iframe...")
-  await page.waitForSelector("#aid-auth-widget-iFrame");
+  try {
 
-  //contains always the main frame, so we need at least a second one (the iframe)
-  const frames = await page.frames()
-  if (frames.length < 2) {
-    logger.error("Couldn't find iframe")
+    const browser = await chromium.launch({
+      headless: true,
+      slowMo: 100,
+      devtools: false,
+    });
+
+    const page = await browser.newPage();
+
+    await page.goto(APPLE_LOGIN_URL);
+
+    //await page.waitForLoadState("networkidle");
+    logger.debug("Waiting for iframe...")
+    await page.waitForSelector("#aid-auth-widget-iFrame");
+
+    //contains always the main frame, so we need at least a second one (the iframe)
+    const frames = await page.frames()
+    if (frames.length < 2) {
+      logger.error("Couldn't find iframe")
+      await browser.close();
+      res.status(400).send("Auth iframe couldn't be loaded");
+      return;
+    }
+    // let's assume the first iframe is always the main frame,
+    // so the second one should be our iframe we are looking for
+    const frame = await page.frames()[1]
+
+    await frame.waitForSelector("#account_name_text_field");
+    await frame.type("#account_name_text_field", ACCOUNT_NAME);
+    await frame.click("#sign-in");
+    await frame.click("#password_text_field");
+    await frame.type("#password_text_field", PASSWORD);
+    await frame.click("#sign-in");
+    logger.debug("sign in clicked")
+
+    //TODO: replace by waiting for an element instead of waiting 5 secs
+    await frame.waitForTimeout(5000);
+    await frame.click(`text=••${PHONE_NUMBER_LAST_DIGITS}`);
+
+    logger.debug("Clicked on the phone number and waiting now...")
+
+    // Wait maximum 30 seconds in loop until the verification code is not null
+    let waitTime = 0;
+    while (verificationCode === null && waitTime < 30) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      waitTime++;
+    }
+
+    const code = verificationCode;
+    // Reset verification code for next request
+    verificationCode = null;
+    if (code === null) {
+      logger.error("Verification code not received, waited 30sec");
+      await browser.close();
+      res.status(400).send("Verification code not received");
+      return;
+    }
+
+    logger.debug("Code received, entering the code into form now")
+
+    // click on the first input field with id char0
+    await frame.click("#char0");
+    await frame.type("#char0", code[0]);
+    await frame.waitForTimeout(Math.random() * 1000 + 500);
+
+    await frame.click("#char1");
+    await frame.type("#char1", code[1]);
+    await frame.waitForTimeout(Math.random() * 1000 + 500);
+
+    await frame.click("#char2");
+    await frame.type("#char2", code[2]);
+    await frame.waitForTimeout(Math.random() * 1000 + 500);
+
+    await frame.click("#char3");
+    await frame.type("#char3", code[3]);
+    await frame.waitForTimeout(Math.random() * 1000 + 500);
+
+    await frame.click("#char4");
+    await frame.type("#char4", code[4]);
+    await frame.waitForTimeout(Math.random() * 1000 + 500);
+
+    await frame.click("#char5");
+    await frame.type("#char5", code[5]);
+
+    await frame.waitForSelector("body");
+
+    // TODO: Accept browser if needed
+    // https://github.com/georgespencer/derogan/blob/bc25a2651006b6356aa19b258076029968f277e0/apple_music.py#L54
+    // frame.click("//button[contains(@id,'trust-browser')]").click();
+
+    await page.waitForTimeout(5000);
+    await page.waitForLoadState("networkidle");
+
+    logger.debug("Looks good, we should be logged in, so goto podcast dashboard to generate all missing cookies")
+
+    await page.goto(PODCAST_URL);
+    await page.waitForSelector("body");
+
+    await page.waitForTimeout(5000);
+    await page.waitForLoadState("networkidle");
+
+    const cookies = await page.context().cookies();
+    console.log(cookies);
+    // const myacinfo = cookies.find((cookie) => cookie.name === "myacinfo");
+    // const itctx = cookies.find((cookie) => cookie.name === "itctx");
+    // fs.writeFileSync("cookie.json", JSON.stringify({ myacinfo, itctx }));
+    // await page.waitForTimeout(5000);
+
+  } catch (e) {
+    logger.error('playwright crashed')
+    logger.error(e)
     await browser.close();
-    res.status(400).send("Auth iframe couldn't be loaded");
+    res.status(500).send("headless exploded, wait and try again");
     return;
   }
-  // let's assume the first iframe is always the main frame,
-  // so the second one should be our iframe we are looking for
-  const frame = await page.frames()[1]
-
-  await frame.waitForSelector("#account_name_text_field");
-  await frame.type("#account_name_text_field", ACCOUNT_NAME);
-  await frame.click("#sign-in");
-  await frame.click("#password_text_field");
-  await frame.type("#password_text_field", PASSWORD);
-  await frame.click("#sign-in");
-  logger.debug("sign in clicked")
-
-  //TODO: replace by waiting for an element instead of waiting 5 secs
-  await frame.waitForTimeout(5000);
-  await frame.click(`text=••${PHONE_NUMBER_LAST_DIGITS}`);
-
-  logger.debug("Clicked on the phone number and waiting now...")
-
-  // Wait maximum 30 seconds in loop until the verification code is not null
-  let waitTime = 0;
-  while (verificationCode === null && waitTime < 30) {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    waitTime++;
-  }
-
-  const code = verificationCode;
-  // Reset verification code for next request
-  verificationCode = null;
-  if (code === null) {
-    logger.error("Verification code not received, waited 30sec");
-    await browser.close();
-    res.status(400).send("Verification code not received");
-    return;
-  }
-
-  logger.debug("Code received, entering the code into form now")
-
-  // click on the first input field with id char0
-  await frame.click("#char0");
-  await frame.type("#char0", code[0]);
-  await frame.waitForTimeout(Math.random() * 1000 + 500);
-
-  await frame.click("#char1");
-  await frame.type("#char1", code[1]);
-  await frame.waitForTimeout(Math.random() * 1000 + 500);
-
-  await frame.click("#char2");
-  await frame.type("#char2", code[2]);
-  await frame.waitForTimeout(Math.random() * 1000 + 500);
-
-  await frame.click("#char3");
-  await frame.type("#char3", code[3]);
-  await frame.waitForTimeout(Math.random() * 1000 + 500);
-
-  await frame.click("#char4");
-  await frame.type("#char4", code[4]);
-  await frame.waitForTimeout(Math.random() * 1000 + 500);
-
-  await frame.click("#char5");
-  await frame.type("#char5", code[5]);
-
-  await frame.waitForSelector("body");
-
-  // TODO: Accept browser if needed
-  // https://github.com/georgespencer/derogan/blob/bc25a2651006b6356aa19b258076029968f277e0/apple_music.py#L54
-  // frame.click("//button[contains(@id,'trust-browser')]").click();
-
-  await page.waitForTimeout(5000);
-  await page.waitForLoadState("networkidle");
-
-  logger.debug("Looks good, we should be logged in, so goto podcast dashboard to generate all missing cookies")
-
-  await page.goto(PODCAST_URL);
-  await page.waitForSelector("body");
-
-  await page.waitForTimeout(5000);
-  await page.waitForLoadState("networkidle");
-
-  const cookies = await page.context().cookies();
-  console.log(cookies);
-  // const myacinfo = cookies.find((cookie) => cookie.name === "myacinfo");
-  // const itctx = cookies.find((cookie) => cookie.name === "itctx");
-  // fs.writeFileSync("cookie.json", JSON.stringify({ myacinfo, itctx }));
-  // await page.waitForTimeout(5000);
 
   await browser.close();
 
