@@ -47,7 +47,7 @@ app.get("/code", express.json(), (req, res) => {
 
 app.get("/cookies", async (req, res) => {
   logger.info("Received request for cookies");
-  const browser = await firefox.launch({
+  const browser = await chromium.launch({
     headless: true,
     slowMo: 100,
     devtools: false,
