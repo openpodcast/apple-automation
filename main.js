@@ -1,8 +1,11 @@
 const { chromium, firefox } = require("playwright");
 const fs = require("fs");
 const express = require("express");
+const dotenv = require('dotenv');
 
 const APPLE_LOGIN_URL = "https://appleid.apple.com/sign-in";
+
+dotenv.config();
 
 // Get environment variables
 const ACCOUNT_NAME = process.env.ACCOUNT_NAME;
@@ -47,10 +50,27 @@ app.get("/cookies", async (req, res) => {
   await page.waitForLoadState("networkidle");
   await page.waitForSelector("iframe[name='aid-auth-widget']");
 
-  const frame = await page.frame({
+  let frame = await page.frame({
     name: "aid-auth-widget",
   });
 
+  //lets try to reload
+  if (!frame) {
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await page.waitForSelector("iframe[name='aid-auth-widget']");
+    frame = await page.frame({
+      name: "aid-auth-widget",
+    });
+    //if we still can't find it, give up
+    if (!frame) {
+      await browser.close();
+      res.status(400).send("Auth iframe couldn't be loaded");
+      return;
+    }
+  }
+
+  await frame.waitForSelector("#account_name_text_field");
   await frame.type("#account_name_text_field", ACCOUNT_NAME);
   await frame.click("#sign-in");
   await frame.click("#password_text_field");
