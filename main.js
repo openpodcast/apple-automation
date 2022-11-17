@@ -49,16 +49,19 @@ app.get("/code", express.json(), (req, res) => {
 app.get("/cookies", async (req, res) => {
   logger.info("Received request for cookies");
 
-  // when using chromium in headless mode (and only in headless)
-  // the iframe is not loaded, therefor we are using firefox for now
-  const browser = await firefox.launch({
+  const browser = await chromium.launch({
     headless: HEADLESS === "TRUE",
     slowMo: 100
   });
 
+  // when using the headless user-agent apple's iframe is not loaded
+  const context = await browser.newContext({
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'
+  });
+
   try {
 
-    const page = await browser.newPage();
+    const page = await context.newPage();
 
     await page.goto(APPLE_LOGIN_URL);
 
