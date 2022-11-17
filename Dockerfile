@@ -9,6 +9,6 @@ WORKDIR /app
 # COPY code
 COPY . /app
 
-RUN npm install
+RUN npm install --omit=dev
 
 ENTRYPOINT ["forever", "main.js"]
