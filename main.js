@@ -48,9 +48,9 @@ app.get("/code", express.json(), (req, res) => {
 app.get("/cookies", async (req, res) => {
   logger.info("Received request for cookies");
   const browser = await firefox.launch({
-    headless: false,
+    headless: true,
     slowMo: 100,
-    devtools: true,
+    devtools: false,
   });
 
   const page = await browser.newPage();
