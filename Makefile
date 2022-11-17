@@ -2,6 +2,10 @@
 run dev:
 	node main.js
 
+.PHONY: install
+install:
+	npm install
+
 .PHONY: docker-build
 docker-build: # Run Docker build
 	docker build -t apple-automation .
