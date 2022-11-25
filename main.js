@@ -1,8 +1,8 @@
 const { chromium, firefox } = require("playwright");
 const fs = require("fs");
 const express = require("express");
-const dotenv = require('dotenv');
-const winston = require('winston');
+const dotenv = require("dotenv");
+const winston = require("winston");
 
 const APPLE_LOGIN_URL = "https://appleid.apple.com/sign-in";
 
@@ -15,14 +15,14 @@ const PHONE_NUMBER_LAST_DIGITS = process.env.PHONE_NUMBER_LAST_DIGITS;
 const PODCAST_URL = process.env.PODCAST_URL;
 const PORT = process.env.PORT || 3000;
 const LOGLEVEL = process.env.LOGLEVEL || "info";
-const HEADLESS = process.env.HEADLESS || "TRUE"
+const HEADLESS = process.env.HEADLESS || "TRUE";
+const WAIT_TIME_SECS = process.env.WAIT_TIME_SECS || 60;
 
 const logger = winston.createLogger({
   level: LOGLEVEL,
   format: winston.format.json(),
-  transports: [new winston.transports.Console(),],
+  transports: [new winston.transports.Console()],
 });
-
 
 let verificationCode = null;
 
@@ -51,35 +51,35 @@ app.get("/cookies", async (req, res) => {
 
   const browser = await chromium.launch({
     headless: HEADLESS === "TRUE",
-    slowMo: 100
+    slowMo: 100,
   });
 
   // when using the headless user-agent apple's iframe is not loaded
   const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'
+    userAgent:
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36",
   });
 
   try {
-
     const page = await context.newPage();
 
     await page.goto(APPLE_LOGIN_URL);
 
     //await page.waitForLoadState("networkidle");
-    logger.debug("Waiting for iframe...")
+    logger.debug("Waiting for iframe...");
     await page.waitForSelector("#aid-auth-widget-iFrame");
 
     //contains always the main frame, so we need at least a second one (the iframe)
-    const frames = await page.frames()
+    const frames = await page.frames();
     if (frames.length < 2) {
-      logger.error("Couldn't find iframe")
+      logger.error("Couldn't find iframe");
       await browser.close();
       res.status(400).send("Auth iframe couldn't be loaded");
       return;
     }
     // let's assume the first iframe is always the main frame,
     // so the second one should be our iframe we are looking for
-    const frame = await page.frames()[1]
+    const frame = await page.frames()[1];
 
     await frame.waitForSelector("#account_name_text_field");
     await frame.type("#account_name_text_field", ACCOUNT_NAME);
@@ -87,17 +87,18 @@ app.get("/cookies", async (req, res) => {
     await frame.click("#password_text_field");
     await frame.type("#password_text_field", PASSWORD);
     await frame.click("#sign-in");
-    logger.debug("sign in clicked")
+    logger.debug("sign in clicked");
 
     //TODO: replace by waiting for an element instead of waiting 5 secs
     await frame.waitForTimeout(5000);
     await frame.click(`text=••${PHONE_NUMBER_LAST_DIGITS}`);
 
-    logger.debug("Clicked on the phone number and waiting now...")
+    logger.debug("Clicked on the phone number and waiting now...");
 
-    // Wait maximum 30 seconds in loop until the verification code is not null
+    // Wait maximum `WAIT_TIME_SECS` seconds in loop until the verification code
+    // is not null
     let waitTime = 0;
-    while (verificationCode === null && waitTime < 60) {
+    while (verificationCode === null && waitTime < WAIT_TIME_SECS) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       waitTime++;
     }
@@ -106,13 +107,13 @@ app.get("/cookies", async (req, res) => {
     // Reset verification code for next request
     verificationCode = null;
     if (code === null) {
-      logger.error("Verification code not received, waited 30sec");
+      logger.error(`Verification code not received, waited ${waitTime}s`);
       await browser.close();
       res.status(503).send("Verification code not received");
       return;
     }
 
-    logger.debug("Code received, entering the code into form now")
+    logger.debug("Code received, entering the code into form now");
 
     // click on the first input field with id char0
     await frame.click("#char0");
@@ -127,7 +128,9 @@ app.get("/cookies", async (req, res) => {
     await page.waitForTimeout(5000);
     await page.waitForLoadState("networkidle");
 
-    logger.debug("Looks good, we should be logged in, so goto podcast dashboard to generate all missing cookies")
+    logger.debug(
+      "Looks good, we should be logged in, so goto podcast dashboard to generate all missing cookies"
+    );
 
     await page.goto(PODCAST_URL);
     await page.waitForSelector("body");
@@ -145,15 +148,15 @@ app.get("/cookies", async (req, res) => {
     // const itctx = cookies.find((cookie) => cookie.name === "itctx");
     // fs.writeFileSync("cookie.json", JSON.stringify({ myacinfo, itctx }));
     // await page.waitForTimeout(5000);
-
   } catch (e) {
-    logger.error('playwright error')
-    logger.error(e.message)
+    logger.error("playwright error");
+    logger.error(e.message);
     await browser.close();
-    res.status(503).send("error while doing auth magic with apple. try again later.");
+    res
+      .status(503)
+      .send("error while doing auth magic with apple. try again later.");
     return;
   }
-
 });
 
 app.listen(PORT, () => {
