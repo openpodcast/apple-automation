@@ -26,6 +26,28 @@ const logger = winston.createLogger({
 
 let verificationCode = null;
 
+const waitForVerificationCode = async (maxWaitTime) => {
+  let waitTime = 0;
+  while (verificationCode === null && waitTime < maxWaitTime) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    waitTime++;
+  }
+};
+
+// Wait maximum `WAIT_TIME_SECS` seconds in loop until the GLOBAL verification
+// code is not null
+const getVerificationCode = async (frame) => {
+  waitForVerificationCode(WAIT_TIME_SECS);
+  if (verificationCode !== null) {
+    return;
+  }
+
+  logger.info("No verification code received. Retrying...");
+  await frame.click("#other-opts");
+  await frame.click("#try-again-link");
+  waitForVerificationCode(WAIT_TIME_SECS);
+};
+
 const app = express();
 
 // Handle post request with JSON payload. Extract `body` field from JSON payload
@@ -93,17 +115,11 @@ app.get("/cookies", async (req, res) => {
     await frame.waitForTimeout(5000);
     await frame.click(`text=••${PHONE_NUMBER_LAST_DIGITS}`);
 
-    logger.debug("Clicked on the phone number and waiting now...");
+    logger.debug(
+      "Clicked on phone number. Waiting for verification code from phone..."
+    );
 
-    // Wait maximum `WAIT_TIME_SECS` seconds in loop until the verification code
-    // is not null
-    let waitTime = 0;
-    while (verificationCode === null && waitTime < WAIT_TIME_SECS) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      waitTime++;
-    }
-
-    const code = verificationCode;
+    const code = await getVerificationCode(frame);
     // Reset verification code for next request
     verificationCode = null;
     if (code === null) {
