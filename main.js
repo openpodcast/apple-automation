@@ -26,27 +26,26 @@ const logger = winston.createLogger({
 
 let verificationCode = null;
 
+const waitForVerificationCode = async (maxWaitTime) => {
+  let waitTime = 0;
+  while (verificationCode === null && waitTime < maxWaitTime) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    waitTime++;
+  }
+};
+
 // Wait maximum `WAIT_TIME_SECS` seconds in loop until the GLOBAL verification
 // code is not null
 const getVerificationCode = async (frame) => {
-  let waitTime = 0;
-  let maxRetries = 1;
-
-  for (let i = 0; i < maxRetries; i++) {
-    while (verificationCode === null && waitTime < WAIT_TIME_SECS) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      waitTime++;
-    }
-
-    if (verificationCode !== null) {
-      break;
-    }
-
-    logger.info("No verification code received. Retrying...");
-    await frame.click("#other-opts");
-    await frame.click("#try-again-link");
-    waitTime = 0;
+  waitForVerificationCode(WAIT_TIME_SECS);
+  if (verificationCode !== null) {
+    return;
   }
+
+  logger.info("No verification code received. Retrying...");
+  await frame.click("#other-opts");
+  await frame.click("#try-again-link");
+  waitForVerificationCode(WAIT_TIME_SECS);
 };
 
 const app = express();
