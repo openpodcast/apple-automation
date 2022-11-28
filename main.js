@@ -45,6 +45,7 @@ const getVerificationCode = async (frame) => {
     logger.info("No verification code received. Retrying...");
     await frame.click("#other-opts");
     await frame.click("#try-again-link");
+    waitTime = 0;
   }
 };
 
