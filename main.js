@@ -37,15 +37,23 @@ const waitForVerificationCode = async (maxWaitTime) => {
 // Wait maximum `WAIT_TIME_SECS` seconds in loop until the GLOBAL verification
 // code is not null
 const getVerificationCode = async (frame) => {
-  waitForVerificationCode(WAIT_TIME_SECS);
+  await waitForVerificationCode(WAIT_TIME_SECS);
   if (verificationCode !== null) {
+    return;
+  }
+
+  const html = await frame.innerHTML("body");
+  if (html.includes("Too many verification codes have been sent")) {
+    logger.info(
+      "Too many verification codes have been sent. Stopping. Try again later"
+    );
     return;
   }
 
   logger.info("No verification code received. Retrying...");
   await frame.click("#other-opts");
   await frame.click("#try-again-link");
-  waitForVerificationCode(WAIT_TIME_SECS);
+  await waitForVerificationCode(WAIT_TIME_SECS);
 };
 
 const app = express();
@@ -64,6 +72,10 @@ app.get("/code", express.json(), (req, res) => {
 
     // Resolve the promise with the code
     verificationCode = code;
+  } else {
+    logger.error(
+      `Couldn't extract verification code from text. Text does not match regex. Received text: ${text}`
+    );
   }
   res.status(204).send();
 });
@@ -119,17 +131,21 @@ app.get("/cookies", async (req, res) => {
       "Clicked on phone number. Waiting for verification code from phone..."
     );
 
-    const code = await getVerificationCode(frame);
+    await getVerificationCode(frame);
+
+    // Notification code is not returned from getVerificationCode function.
+    // Instead it is set in the global variable `verificationCode`.
+    const code = verificationCode;
     // Reset verification code for next request
     verificationCode = null;
     if (code === null) {
-      logger.error(`Verification code not received, waited ${waitTime}s`);
+      logger.error(`Verification code not received`);
       await browser.close();
       res.status(503).send("Verification code not received");
       return;
     }
 
-    logger.debug("Code received, entering the code into form now");
+    logger.debug(`Code ${code} received, entering the code into form now`);
 
     // click on the first input field with id char0
     await frame.click("#char0");
@@ -148,6 +164,7 @@ app.get("/cookies", async (req, res) => {
       "Looks good, we should be logged in, so goto podcast dashboard to generate all missing cookies"
     );
 
+    logger.debug(`switching to podcast dashboard at ${PODCAST_URL}`);
     await page.goto(PODCAST_URL);
     await page.waitForSelector("body");
 
