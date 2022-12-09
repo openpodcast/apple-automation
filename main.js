@@ -4,19 +4,18 @@ const express = require("express");
 const dotenv = require("dotenv");
 const winston = require("winston");
 
-const APPLE_LOGIN_URL = "https://appleid.apple.com/sign-in";
-
 dotenv.config();
 
 // Get environment variables
 const ACCOUNT_NAME = process.env.ACCOUNT_NAME;
 const PASSWORD = process.env.PASSWORD;
 const PHONE_NUMBER_LAST_DIGITS = process.env.PHONE_NUMBER_LAST_DIGITS;
-const PODCAST_URL = process.env.PODCAST_URL;
 const PORT = process.env.PORT || 3000;
 const LOGLEVEL = process.env.LOGLEVEL || "info";
 const HEADLESS = process.env.HEADLESS || "TRUE";
 const WAIT_TIME_SECS = process.env.WAIT_TIME_SECS || 60;
+
+const APPLE_LOGIN_URL = `https://podcastsconnect.apple.com`;
 
 const logger = winston.createLogger({
   level: LOGLEVEL,
@@ -99,7 +98,9 @@ app.get("/cookies", async (req, res) => {
 
     await page.goto(APPLE_LOGIN_URL);
 
-    //await page.waitForLoadState("networkidle");
+    // wait for the page to load as a sanity measure
+    await page.waitForLoadState("networkidle");
+
     logger.debug("Waiting for iframe...");
     await page.waitForSelector("#aid-auth-widget-iFrame");
 
@@ -157,30 +158,30 @@ app.get("/cookies", async (req, res) => {
     // https://github.com/georgespencer/derogan/blob/bc25a2651006b6356aa19b258076029968f277e0/apple_music.py#L54
     // frame.click("//button[contains(@id,'trust-browser')]").click();
 
-    await page.waitForTimeout(5000);
     await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(5000);
 
     logger.debug(
-      "Looks good, we should be logged in, so goto podcast dashboard to generate all missing cookies"
+      "Looks good, we should be logged in, so go to podcast dashboard to generate all missing cookies"
     );
 
-    logger.debug(`switching to podcast dashboard at ${PODCAST_URL}`);
-    await page.goto(PODCAST_URL);
-    await page.waitForSelector("body");
+    // Click on .user-profile to open the dropdown menu
+    await page.click(".user-profile");
 
-    await page.waitForTimeout(5000);
     await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(5000);
+
+    await page.click(".user-profile");
+    await page.click("text=Open Podcast");
+
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(5000);
 
     const cookies = await page.context().cookies();
 
     await browser.close();
 
     res.json(cookies);
-
-    // const myacinfo = cookies.find((cookie) => cookie.name === "myacinfo");
-    // const itctx = cookies.find((cookie) => cookie.name === "itctx");
-    // fs.writeFileSync("cookie.json", JSON.stringify({ myacinfo, itctx }));
-    // await page.waitForTimeout(5000);
   } catch (e) {
     logger.error("playwright error");
     logger.error(e.message);

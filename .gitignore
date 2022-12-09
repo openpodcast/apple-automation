@@ -1,3 +1,4 @@
 .env
+.env.engineering_kiosk
 node_modules
 cookie.json
