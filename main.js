@@ -176,7 +176,10 @@ app.get("/cookies", async (req, res) => {
     );
 
     await page.click(".user-profile");
-    await page.click(`text=${podcastId}`);
+
+    // TODO: Might switch to `data-provider-id` instead of `data-provider-title`
+    await page.locator(`[data-provider-title="${podcastId}"]`).click();
+
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(5000);
 
