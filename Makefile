@@ -15,4 +15,4 @@ docker-run: docker-build # Run Docker container
 	docker run -it --env-file .env --rm --name apple-automation apple-automation
 
 .env.sample:
-	@envsync -e ACCOUNTS='{"bearer_token":"podcast name"}'	
+	@envsync -e ACCOUNTS=\'{'"bearer_token":"podcast name"'}\'
