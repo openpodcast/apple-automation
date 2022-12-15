@@ -3,7 +3,7 @@ const fs = require("fs");
 const express = require("express");
 const dotenv = require("dotenv");
 const winston = require("winston");
-const { AuthController } = require("./auth.js");
+const AuthController = require("./auth.js");
 
 dotenv.config();
 
@@ -60,7 +60,7 @@ const app = express();
 
 // throw exception if not authorized
 const authController = new AuthController();
-app.use(unless(publicEndpoints, authController.getMiddleware()));
+app.use(authController.getMiddleware());
 
 // Handle post request with JSON payload. Extract `body` field from JSON payload
 app.get("/code", express.json(), (req, res) => {
