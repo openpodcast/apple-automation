@@ -34,8 +34,12 @@ class AuthController {
 
     // store the user data in the response object (locals is officially made for this)
     // so we can access this data in the backend when it is stored to the database
+
+    // Remove the "Bearer " prefix from the token
+    const token = authToken.substring(7);
+
     res.locals.user = {
-      accountId: this.getAccountId(accounts, authToken),
+      accountId: this.getAccountId(accounts, token),
     };
 
     return next();

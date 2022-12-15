@@ -87,15 +87,7 @@ app.get("/code", express.json(), (req, res) => {
 app.get("/cookies", async (req, res) => {
   logger.info("Received request for cookies");
 
-  // For now the id is just the podcast name as a string
-  // Later this should be a proper API key
-  const podcastId = req.query.id;
-  console.log(`API token: ${podcastId}`);
-
-  if (!podcastId) {
-    res.status(400).send("No podcast id provided");
-    return;
-  }
+  const podcastId = res.locals.user.accountId;
 
   const browser = await chromium.launch({
     headless: HEADLESS === "TRUE",
