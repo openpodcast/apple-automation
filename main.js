@@ -58,10 +58,6 @@ const getVerificationCode = async (frame) => {
 
 const app = express();
 
-// throw exception if not authorized
-const authController = new AuthController();
-app.use(authController.getMiddleware());
-
 // Handle post request with JSON payload. Extract `body` field from JSON payload
 app.get("/code", express.json(), (req, res) => {
   // Get Body as get parameter
@@ -84,7 +80,9 @@ app.get("/code", express.json(), (req, res) => {
   res.status(204).send();
 });
 
-app.get("/cookies", async (req, res) => {
+// Needs to be authenticated to access this endpoint
+const authController = new AuthController();
+app.get("/cookies", authController.getMiddleware(), async (req, res) => {
   logger.info("Received request for cookies");
 
   const podcastId = res.locals.user.accountId;
