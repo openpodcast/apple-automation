@@ -3,6 +3,7 @@ const fs = require("fs");
 const express = require("express");
 const dotenv = require("dotenv");
 const winston = require("winston");
+const AuthController = require("./auth.js");
 
 dotenv.config();
 
@@ -57,6 +58,10 @@ const getVerificationCode = async (frame) => {
 
 const app = express();
 
+// throw exception if not authorized
+const authController = new AuthController();
+app.use(authController.getMiddleware());
+
 // Handle post request with JSON payload. Extract `body` field from JSON payload
 app.get("/code", express.json(), (req, res) => {
   // Get Body as get parameter
@@ -82,15 +87,7 @@ app.get("/code", express.json(), (req, res) => {
 app.get("/cookies", async (req, res) => {
   logger.info("Received request for cookies");
 
-  // For now the id is just the podcast name as a string
-  // Later this should be a proper API key
-  const podcastId = req.query.id;
-  console.log(`API token: ${podcastId}`);
-
-  if (!podcastId) {
-    res.status(400).send("No podcast id provided");
-    return;
-  }
+  const podcastId = res.locals.user.accountId;
 
   const browser = await chromium.launch({
     headless: HEADLESS === "TRUE",
